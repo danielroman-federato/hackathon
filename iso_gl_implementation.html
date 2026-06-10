@@ -1,0 +1,1364 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Federato — Product Studio: ISO GL Implementation</title>
+<style>
+*{margin:0;padding:0;box-sizing:border-box;}
+:root{
+  /* sidebar stays dark */
+  --sidebar:#111827;
+  --sidebar-hover:#1f2937;
+  --sidebar-active:#1f2937;
+  /* content area — light */
+  --bg:#f1f5f9;
+  --surface:#ffffff;
+  --raised:#f8fafc;
+  --border:#e2e8f0;
+  --border-focus:#cbd5e1;
+  /* text */
+  --text:#0f172a;
+  --text-sec:#475569;
+  --text-muted:#94a3b8;
+  /* accents */
+  --blue:#2563eb;
+  --blue-lt:#eff6ff;
+  --blue-mid:#dbeafe;
+  --green:#16a34a;
+  --green-lt:#f0fdf4;
+  --amber:#b45309;
+  --amber-lt:#fffbeb;
+  --amber-mid:#fef3c7;
+  --red:#dc2626;
+  --red-lt:#fef2f2;
+  --purple:#7c3aed;
+  --purple-lt:#f5f3ff;
+  --indigo:#4338ca;
+  --teal:#0d9488;
+}
+body{font-family:-apple-system,BlinkMacSystemFont,'Inter','Segoe UI',sans-serif;background:var(--bg);color:var(--text);height:100vh;display:flex;overflow:hidden;font-size:14px;}
+
+/* ── APP SIDEBAR (stays dark) ── */
+.app-nav{width:54px;background:var(--sidebar);display:flex;flex-direction:column;align-items:center;padding:12px 0;gap:2px;flex-shrink:0;border-right:1px solid rgba(255,255,255,.05);}
+.app-logo{width:32px;height:32px;background:#2563eb;border-radius:8px;display:flex;align-items:center;justify-content:center;font-weight:900;font-size:13px;color:#fff;margin-bottom:16px;}
+.app-icon{width:36px;height:36px;display:flex;align-items:center;justify-content:center;border-radius:8px;cursor:pointer;color:#6b7280;font-size:16px;transition:background .12s,color .12s;}
+.app-icon:hover{background:var(--sidebar-hover);color:#e5e7eb;}
+.app-icon.on{background:var(--sidebar-active);color:#93c5fd;}
+.app-icon-bottom{margin-top:auto;}
+
+/* ── MAIN ── */
+.main{flex:1;display:flex;flex-direction:column;overflow:hidden;}
+.screen{display:none;flex:1;overflow:hidden;flex-direction:column;}
+.screen.active{display:flex;}
+
+/* ── TOPBAR (light) ── */
+.topbar{height:48px;background:var(--surface);border-bottom:1px solid var(--border);display:flex;align-items:center;padding:0 20px;flex-shrink:0;}
+.topbar-proto{font-size:10px;font-weight:700;padding:2px 7px;border-radius:4px;background:#2563eb;color:#fff;letter-spacing:.6px;margin-right:14px;}
+.bc{display:flex;align-items:center;gap:7px;font-size:12px;color:var(--text-muted);}
+.bc-link{cursor:pointer;transition:color .1s;}
+.bc-link:hover{color:var(--blue);}
+.bc-sep{color:var(--border-focus);}
+.bc-cur{color:var(--text);font-weight:600;}
+.topbar-right{margin-left:auto;display:flex;align-items:center;gap:8px;}
+
+/* ── BUTTONS ── */
+.btn{display:inline-flex;align-items:center;gap:5px;padding:7px 14px;border-radius:7px;font-size:12px;font-weight:600;cursor:pointer;border:none;transition:all .12s;font-family:inherit;}
+.btn:hover{opacity:.88;}
+.btn:active{transform:scale(.98);}
+.btn-sm{padding:5px 11px;font-size:11px;}
+.btn-primary{background:#0f172a;color:#fff;}
+.btn-primary:hover{background:#1e293b;opacity:1;}
+.btn-outline{background:var(--surface);color:var(--text-sec);border:1px solid var(--border);}
+.btn-outline:hover{background:var(--raised);color:var(--text);opacity:1;border-color:var(--border-focus);}
+.btn-blue{background:var(--blue);color:#fff;}
+.btn-blue:hover{background:#1d4ed8;opacity:1;}
+.btn-ghost{background:transparent;color:var(--text-muted);border:1px solid var(--border);}
+.btn-ghost:hover{background:var(--raised);color:var(--text);opacity:1;}
+
+/* ── PRODUCT SIDEBAR (light, like rater screenshot) ── */
+.prod-nav{width:220px;background:var(--surface);border-right:1px solid var(--border);display:flex;flex-direction:column;padding:0;flex-shrink:0;}
+.prod-nav-header{padding:18px 16px 14px;border-bottom:1px solid var(--border);}
+.prod-nav-title{font-size:15px;font-weight:700;color:var(--text);margin-bottom:5px;}
+.prod-nav-section{font-size:10px;font-weight:700;letter-spacing:.08em;color:var(--text-muted);padding:14px 16px 6px;text-transform:uppercase;}
+.prod-nav-item{display:flex;align-items:center;justify-content:space-between;padding:8px 16px;font-size:13px;color:var(--text-sec);cursor:pointer;transition:background .1s,color .1s;}
+.prod-nav-item:hover{background:var(--raised);color:var(--text);}
+.prod-nav-item.on{background:var(--raised);color:var(--text);font-weight:600;border-left:3px solid var(--blue);padding-left:13px;}
+.prod-nav-badge{font-size:11px;font-weight:600;color:var(--text-muted);background:var(--border);padding:1px 7px;border-radius:10px;}
+.prod-nav-footer{margin-top:auto;padding:14px 16px;border-top:1px solid var(--border);}
+
+/* ── CONTENT ── */
+.content{flex:1;overflow-y:auto;padding:28px 32px;background:var(--bg);}
+.content::-webkit-scrollbar{width:5px;}
+.content::-webkit-scrollbar-track{background:transparent;}
+.content::-webkit-scrollbar-thumb{background:var(--border);border-radius:3px;}
+
+/* ── PAGE HEADER ── */
+.pg-header{margin-bottom:24px;}
+.pg-title{font-size:22px;font-weight:700;color:var(--text);margin-bottom:4px;}
+.pg-sub{font-size:13px;color:var(--text-sec);}
+
+/* ── TAGS ── */
+.tag{display:inline-flex;align-items:center;gap:4px;padding:2px 8px;border-radius:20px;font-size:11px;font-weight:600;white-space:nowrap;}
+.tag-admitted{color:#1d4ed8;background:#dbeafe;border:1px solid #bfdbfe;}
+.tag-draft{color:#92400e;background:#fef3c7;border:1px solid #fde68a;}
+.tag-published{color:#166534;background:#dcfce7;border:1px solid #bbf7d0;}
+.tag-current{color:#166534;background:#dcfce7;border:1px solid #bbf7d0;}
+.tag-behind{color:#92400e;background:#fef3c7;border:1px solid #fde68a;}
+.tag-latest{color:#166534;background:#dcfce7;border:1px solid#bbf7d0;}
+.tag-new{color:#5b21b6;background:#ede9fe;border:1px solid #ddd6fe;}
+.tag-mandatory{color:#fff;background:var(--blue);}
+.tag-conditional{color:#92400e;background:#fef3c7;}
+.tag-forms-t{color:#166534;background:#dcfce7;border:1px solid #bbf7d0;}
+.tag-rules-t{color:#9a3412;background:#ffedd5;border:1px solid #fed7aa;}
+.tag-rates-t{color:#1d4ed8;background:#dbeafe;border:1px solid #bfdbfe;}
+.tag-stat-t{color:#5b21b6;background:#ede9fe;border:1px solid #ddd6fe;}
+
+/* ── CARDS ── */
+.card{background:var(--surface);border:1px solid var(--border);border-radius:10px;padding:18px;}
+.card-sm{padding:14px;}
+
+/* ── OPTION CARDS (content-source) ── */
+.option-cards{display:flex;gap:14px;margin-bottom:20px;}
+.option-card{flex:1;background:var(--surface);border:1.5px solid var(--border);border-radius:10px;padding:18px;cursor:pointer;transition:border-color .15s,box-shadow .15s;}
+.option-card:hover{border-color:var(--border-focus);box-shadow:0 2px 8px rgba(0,0,0,.06);}
+.option-card.selected{border-color:var(--blue);box-shadow:0 0 0 3px rgba(37,99,235,.1);}
+.option-card .radio{width:16px;height:16px;border-radius:50%;border:2px solid var(--border-focus);margin-bottom:10px;display:flex;align-items:center;justify-content:center;flex-shrink:0;}
+.option-card.selected .radio{border-color:var(--blue);}
+.option-card.selected .radio::after{content:'';width:8px;height:8px;border-radius:50%;background:var(--blue);}
+.option-card h4{font-size:13px;font-weight:700;color:var(--text);margin-bottom:4px;}
+.option-card p{font-size:12px;color:var(--text-muted);line-height:1.5;}
+
+/* ── WIZARD STEPPER ── */
+.stepper{display:flex;align-items:center;margin-bottom:28px;background:var(--surface);border:1px solid var(--border);border-radius:10px;padding:14px 20px;}
+.step-item{display:flex;align-items:center;gap:8px;}
+.step-circle{width:24px;height:24px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:700;flex-shrink:0;}
+.step-circle.done{background:#16a34a;color:#fff;}
+.step-circle.active{background:var(--blue);color:#fff;}
+.step-circle.pending{background:var(--raised);border:1.5px solid var(--border-focus);color:var(--text-muted);}
+.step-label{font-size:12px;font-weight:600;white-space:nowrap;}
+.step-label.done{color:var(--text-muted);}
+.step-label.active{color:var(--text);}
+.step-label.pending{color:var(--text-muted);}
+.step-line{flex:1;height:1px;background:var(--border);margin:0 10px;min-width:16px;}
+.step-line.done{background:#16a34a;}
+
+/* ── FORM ELEMENTS ── */
+.form-group{margin-bottom:18px;}
+.form-label{display:block;font-size:12px;font-weight:600;color:var(--text-sec);margin-bottom:6px;}
+.form-input,.form-select{width:100%;background:var(--surface);border:1px solid var(--border);border-radius:7px;padding:9px 12px;font-size:13px;color:var(--text);outline:none;font-family:inherit;transition:border-color .15s,box-shadow .15s;}
+.form-input:focus,.form-select:focus{border-color:var(--blue);box-shadow:0 0 0 3px rgba(37,99,235,.08);}
+.form-select{appearance:none;cursor:pointer;background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 24 24' fill='none' stroke='%2394a3b8' stroke-width='2'%3E%3Cpath d='M6 9l6 6 6-6'/%3E%3C/svg%3E");background-repeat:no-repeat;background-position:right 10px center;padding-right:30px;}
+.form-row{display:grid;grid-template-columns:1fr 1fr;gap:16px;}
+.radio-group{display:flex;gap:10px;flex-wrap:wrap;}
+.radio-opt{display:flex;align-items:center;gap:7px;background:var(--surface);border:1.5px solid var(--border);border-radius:7px;padding:8px 14px;cursor:pointer;transition:all .12s;}
+.radio-opt:hover{border-color:var(--border-focus);}
+.radio-opt.on{border-color:var(--blue);background:var(--blue-lt);}
+.radio-dot{width:14px;height:14px;border-radius:50%;border:2px solid var(--border-focus);display:flex;align-items:center;justify-content:center;flex-shrink:0;}
+.radio-opt.on .radio-dot{border-color:var(--blue);}
+.radio-opt.on .radio-dot::after{content:'';width:6px;height:6px;border-radius:50%;background:var(--blue);}
+.radio-opt span{font-size:12px;font-weight:600;color:var(--text-sec);}
+.radio-opt.on span{color:var(--blue);}
+
+/* ── DIVIDER ── */
+.divider{height:1px;background:var(--border);margin:20px 0;}
+
+/* ── TABLE ── */
+.tbl{width:100%;border-collapse:collapse;}
+.tbl th{text-align:left;font-size:11px;font-weight:700;letter-spacing:.07em;text-transform:uppercase;color:var(--text-muted);padding:8px 12px;border-bottom:2px solid var(--border);}
+.tbl td{padding:10px 12px;font-size:13px;border-bottom:1px solid var(--border);color:var(--text-sec);}
+.tbl tr:last-child td{border-bottom:none;}
+.tbl tbody tr:hover td{background:var(--raised);}
+.tbl td.td-primary{color:var(--text);font-weight:500;}
+
+/* ── STATS ROW ── */
+.stats-row{display:flex;gap:12px;margin-bottom:22px;}
+.stat-chip{background:var(--surface);border:1px solid var(--border);border-radius:10px;padding:14px 18px;display:flex;flex-direction:column;gap:3px;min-width:110px;}
+.stat-num{font-size:24px;font-weight:800;color:var(--text);line-height:1;}
+.stat-label{font-size:11px;color:var(--text-muted);font-weight:500;}
+
+/* ── CW PACKAGE CARDS (multi-select) ── */
+.pkg-cards{display:flex;gap:14px;margin-bottom:20px;}
+.pkg-card{flex:1;background:var(--surface);border:1.5px solid var(--border);border-radius:12px;padding:20px;cursor:pointer;transition:border-color .15s,box-shadow .15s;position:relative;}
+.pkg-card:hover{border-color:var(--border-focus);box-shadow:0 2px 12px rgba(0,0,0,.07);}
+.pkg-card.selected{border-color:var(--blue);box-shadow:0 0 0 3px rgba(37,99,235,.1);}
+.pkg-card-top{display:flex;align-items:flex-start;justify-content:space-between;margin-bottom:10px;}
+.pkg-id{font-size:13px;font-weight:700;color:var(--text);margin-bottom:3px;font-family:ui-monospace,monospace;}
+.pkg-meta{font-size:12px;color:var(--text-muted);margin-bottom:12px;}
+.pkg-stats{display:grid;grid-template-columns:1fr 1fr;gap:5px;}
+.pkg-stat{font-size:11px;color:var(--text-muted);display:flex;align-items:center;gap:5px;}
+.pkg-stat strong{color:var(--text-sec);}
+/* checkbox style for multi-select */
+.pkg-check{width:20px;height:20px;border-radius:5px;border:2px solid var(--border-focus);display:flex;align-items:center;justify-content:center;flex-shrink:0;transition:all .12s;background:var(--surface);}
+.pkg-card.selected .pkg-check{background:var(--blue);border-color:var(--blue);}
+.pkg-card.selected .pkg-check::after{content:'✓';font-size:12px;color:#fff;font-weight:700;}
+.pkg-sel-hint{font-size:11px;color:var(--text-muted);margin-bottom:14px;display:flex;align-items:center;gap:6px;}
+.pkg-sel-count{font-size:12px;font-weight:700;color:var(--blue);background:var(--blue-lt);padding:3px 10px;border-radius:20px;border:1px solid var(--blue-mid);}
+
+/* ── STATE MATRIX ── */
+.matrix-controls{display:flex;align-items:center;gap:8px;margin-bottom:14px;flex-wrap:wrap;}
+.matrix-filter{display:flex;gap:4px;}
+.filter-btn{padding:5px 12px;border-radius:20px;font-size:11px;font-weight:600;cursor:pointer;border:1px solid var(--border);background:var(--surface);color:var(--text-muted);transition:all .12s;font-family:inherit;}
+.filter-btn:hover{border-color:var(--border-focus);color:var(--text);}
+.filter-btn.on{background:var(--blue-lt);color:var(--blue);border-color:#bfdbfe;}
+.matrix-sep{width:1px;height:20px;background:var(--border);}
+.sel-count{font-size:12px;color:var(--text-sec);margin-left:auto;}
+.sel-count strong{color:var(--text);}
+
+.state-grid{display:grid;grid-template-columns:repeat(8,1fr);gap:7px;margin-bottom:20px;}
+.state-cell{background:var(--surface);border:1.5px solid var(--border);border-radius:9px;padding:9px 8px 8px;cursor:pointer;transition:border-color .12s,box-shadow .12s;position:relative;user-select:none;}
+.state-cell:hover{border-color:var(--border-focus);box-shadow:0 1px 6px rgba(0,0,0,.07);}
+.state-cell.sel{border-color:var(--blue);background:var(--blue-lt);box-shadow:0 0 0 2px rgba(37,99,235,.12);}
+.state-cell.sel-behind{border-color:#d97706;background:var(--amber-lt);box-shadow:0 0 0 2px rgba(217,119,6,.1);}
+.state-cell .sc-code{font-size:13px;font-weight:800;color:var(--text);display:block;margin-bottom:1px;}
+.state-cell .sc-name{font-size:9px;color:var(--text-muted);display:block;margin-bottom:5px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+.state-cell .sc-ver{font-size:10px;font-weight:700;color:var(--text-sec);display:flex;align-items:center;gap:3px;}
+.state-cell .sc-eff{font-size:9px;color:var(--text-muted);display:block;margin-top:2px;}
+.sc-dot{width:6px;height:6px;border-radius:50%;display:inline-block;flex-shrink:0;}
+.sc-dot.current{background:#16a34a;}
+.sc-dot.behind{background:#d97706;}
+.state-cell .sc-chk{position:absolute;top:6px;right:6px;width:14px;height:14px;border-radius:3px;border:1.5px solid var(--border-focus);background:var(--surface);display:flex;align-items:center;justify-content:center;font-size:9px;font-weight:700;color:#fff;transition:all .12s;}
+.state-cell.sel .sc-chk{background:var(--blue);border-color:var(--blue);}
+.state-cell.sel-behind .sc-chk{background:#d97706;border-color:#d97706;}
+
+/* ── REVIEW ── */
+.review-grid{display:grid;grid-template-columns:1fr 1fr 1fr;gap:14px;margin-bottom:22px;}
+.review-card{background:var(--surface);border:1px solid var(--border);border-radius:10px;padding:16px;}
+.review-card h3{font-size:11px;font-weight:700;letter-spacing:.07em;text-transform:uppercase;color:var(--text-muted);margin-bottom:12px;}
+.review-row{display:flex;align-items:center;justify-content:space-between;padding:5px 0;border-bottom:1px solid var(--border);}
+.review-row:last-child{border-bottom:none;}
+.review-row .rr-label{font-size:12px;color:var(--text-muted);}
+.review-row .rr-val{font-size:12px;font-weight:600;color:var(--text);}
+.check-row{display:flex;align-items:center;gap:8px;padding:5px 0;border-bottom:1px solid var(--border);}
+.check-row:last-child{border-bottom:none;}
+.check-label{font-size:12px;color:var(--text-sec);}
+
+/* ── PROGRESS ── */
+.progress-list{display:flex;flex-direction:column;gap:8px;max-width:580px;}
+.progress-item{display:flex;align-items:center;gap:14px;background:var(--surface);border:1px solid var(--border);border-radius:9px;padding:14px 16px;}
+.pi-icon{width:32px;height:32px;border-radius:8px;display:flex;align-items:center;justify-content:center;font-size:15px;flex-shrink:0;}
+.pi-icon.done{background:var(--green-lt);color:var(--green);}
+.pi-icon.running{background:var(--blue-lt);color:var(--blue);}
+.pi-icon.pending{background:var(--raised);color:var(--text-muted);}
+.pi-text{flex:1;}
+.pi-title{font-size:13px;font-weight:600;color:var(--text);margin-bottom:2px;}
+.pi-sub{font-size:11px;color:var(--text-muted);}
+.pi-status{font-size:11px;font-weight:600;}
+.pi-status.done{color:var(--green);}
+.pi-status.running{color:var(--blue);}
+.pi-status.pending{color:var(--text-muted);}
+.progress-bar-wrap{height:3px;background:var(--border);border-radius:2px;margin-top:6px;overflow:hidden;}
+.progress-bar-fill{height:100%;background:var(--blue);border-radius:2px;transition:width .8s ease;}
+
+/* ── SPINNER ── */
+@keyframes spin{to{transform:rotate(360deg);}}
+.spinner{display:inline-block;width:13px;height:13px;border:2px solid rgba(37,99,235,.2);border-top-color:var(--blue);border-radius:50%;animation:spin .7s linear infinite;}
+
+/* ── PRODUCT HOME GRID ── */
+.product-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(280px,1fr));gap:16px;margin-bottom:28px;}
+.product-card{background:var(--surface);border:1px solid var(--border);border-radius:12px;padding:20px;cursor:pointer;transition:border-color .15s,box-shadow .15s;}
+.product-card:hover{border-color:var(--border-focus);box-shadow:0 2px 12px rgba(0,0,0,.07);}
+.product-card h3{font-size:14px;font-weight:700;color:var(--text);margin-bottom:8px;}
+.product-card .pc-lob{font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.06em;color:var(--text-muted);margin-bottom:6px;}
+.new-product-card{background:transparent;border:1.5px dashed var(--border);display:flex;flex-direction:column;align-items:center;justify-content:center;gap:8px;min-height:140px;color:var(--text-muted);}
+.new-product-card:hover{border-color:var(--blue);color:var(--blue);background:var(--blue-lt);}
+.new-product-card .plus{font-size:30px;line-height:1;}
+
+/* ── ALERT ── */
+.alert{display:flex;align-items:flex-start;gap:10px;background:var(--amber-mid);border:1px solid #fde68a;border-radius:8px;padding:12px 14px;margin-bottom:16px;}
+.alert-icon{font-size:15px;margin-top:1px;flex-shrink:0;}
+.alert-text{font-size:12px;color:#78350f;line-height:1.55;}
+.alert-text strong{color:#451a03;}
+.alert-blue{background:var(--blue-lt);border-color:var(--blue-mid);}
+.alert-blue .alert-text{color:#1e40af;}
+.alert-blue .alert-text strong{color:#1e3a8a;}
+
+/* ── SUCCESS BANNER ── */
+.success-banner{background:var(--green-lt);border:1px solid #bbf7d0;border-radius:10px;padding:16px;display:flex;align-items:center;gap:14px;margin-bottom:22px;}
+.success-icon{width:34px;height:34px;border-radius:50%;background:#dcfce7;display:flex;align-items:center;justify-content:center;font-size:16px;flex-shrink:0;}
+.success-text h4{font-size:14px;font-weight:700;color:var(--green);margin-bottom:3px;}
+.success-text p{font-size:12px;color:#166534;}
+
+/* ── INFO BOX ── */
+.info-box{background:var(--surface);border:1px solid var(--border);border-radius:8px;padding:14px;}
+.info-box h4{font-size:11px;font-weight:700;letter-spacing:.06em;text-transform:uppercase;color:var(--text-muted);margin-bottom:10px;}
+
+/* ── WIZARD FOOTER ── */
+.wiz-footer{display:flex;align-items:center;justify-content:space-between;padding:14px 32px;background:var(--surface);border-top:1px solid var(--border);flex-shrink:0;}
+
+/* ── CIRCULAR STATUS PILL ── */
+.circ-dot{display:inline-block;width:7px;height:7px;border-radius:50%;margin-right:5px;}
+.circ-dot.adopted{background:var(--green);}
+.circ-dot.review{background:#d97706;}
+.circ-dot.overdue{background:var(--red);}
+.circ-dot.upcoming{background:var(--purple);}
+</style>
+</head>
+<body>
+
+<!-- ═══ APP NAV ═══ -->
+<nav class="app-nav">
+  <div class="app-logo">F</div>
+  <div class="app-icon" title="Dashboard">⊞</div>
+  <div class="app-icon on" title="Product Studio">◫</div>
+  <div class="app-icon" title="ISO Circulars">↻</div>
+  <div class="app-icon" title="Submissions">≡</div>
+  <div class="app-icon" title="Analytics">◻</div>
+  <div class="app-icon app-icon-bottom" title="Settings">⚙</div>
+</nav>
+
+<div class="main">
+
+<!-- ═══════════════════════════════════
+     S0 — PRODUCT STUDIO HOME
+═══════════════════════════════════ -->
+<div id="s0" class="screen active">
+  <div class="topbar">
+    <span class="topbar-proto">PROTOTYPE</span>
+    <div class="bc"><span class="bc-cur">Product Studio</span></div>
+    <div class="topbar-right">
+      <button class="btn btn-blue" onclick="go('s1')">+ New ISO GL Product</button>
+    </div>
+  </div>
+  <div class="content">
+    <div class="pg-header">
+      <div class="pg-title">Product Studio</div>
+      <div class="pg-sub">General Liability — ISO ERC products, rating content, and forms.</div>
+    </div>
+
+    <!-- GL products only -->
+    <div style="font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.07em;color:var(--text-muted);margin-bottom:12px;">General Liability</div>
+    <div class="product-grid">
+      <div class="product-card" onclick="go('s7')">
+        <div class="pc-lob">General Liability · ISO CGL</div>
+        <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:10px;">
+          <h3>RIC — GL (Alabama Pilot)</h3>
+          <span class="tag tag-admitted">ADMITTED</span>
+        </div>
+        <div style="display:flex;align-items:center;gap:8px;margin-bottom:10px;">
+          <span style="font-size:12px;color:var(--text-muted);">v8</span>
+          <span class="tag tag-draft">DRAFT</span>
+        </div>
+        <div style="font-size:12px;color:var(--text-sec);margin-bottom:4px;">4 jurisdictions &nbsp;·&nbsp; ERC rater &nbsp;·&nbsp; 6 forms</div>
+        <div style="font-size:11px;color:var(--text-muted);margin-top:10px;padding-top:10px;border-top:1px solid var(--border);display:flex;align-items:center;justify-content:space-between;">
+          <span>Last edited 2 days ago</span>
+          <span style="color:#d97706;font-weight:600;font-size:11px;">⚠ 9 circular tasks</span>
+        </div>
+      </div>
+
+      <div class="product-card" onclick="go('s7')">
+        <div class="pc-lob">General Liability · ISO CGL</div>
+        <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:10px;">
+          <h3>Admitted GL — Full 52-State</h3>
+          <span class="tag tag-published">PUBLISHED</span>
+        </div>
+        <div style="display:flex;align-items:center;gap:8px;margin-bottom:10px;">
+          <span style="font-size:12px;color:var(--text-muted);">v3</span>
+        </div>
+        <div style="font-size:12px;color:var(--text-sec);margin-bottom:4px;">52 jurisdictions &nbsp;·&nbsp; ERC rater &nbsp;·&nbsp; 18 forms</div>
+        <div style="font-size:11px;color:var(--text-muted);margin-top:10px;padding-top:10px;border-top:1px solid var(--border);display:flex;align-items:center;justify-content:space-between;">
+          <span>Last edited 8 days ago</span>
+          <span style="color:var(--green);font-size:11px;">✓ All circulars current</span>
+        </div>
+      </div>
+
+      <div class="product-card" onclick="go('s7')">
+        <div class="pc-lob">General Liability · ISO CGL</div>
+        <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:10px;">
+          <h3>E&S GL — Surplus Lines</h3>
+          <span class="tag tag-new">E&amp;S</span>
+        </div>
+        <div style="display:flex;align-items:center;gap:8px;margin-bottom:10px;">
+          <span style="font-size:12px;color:var(--text-muted);">v1</span>
+          <span class="tag tag-draft">DRAFT</span>
+        </div>
+        <div style="font-size:12px;color:var(--text-sec);margin-bottom:4px;">12 jurisdictions &nbsp;·&nbsp; ERC rater &nbsp;·&nbsp; 9 forms</div>
+        <div style="font-size:11px;color:var(--text-muted);margin-top:10px;padding-top:10px;border-top:1px solid var(--border);">
+          Last edited 21 days ago
+        </div>
+      </div>
+
+      <div class="product-card new-product-card" onclick="go('s1')">
+        <div class="plus">＋</div>
+        <span style="font-size:12px;font-weight:600;">New ISO GL Product</span>
+      </div>
+    </div>
+
+    <div class="divider"></div>
+    <div style="font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.07em;color:var(--text-muted);margin-bottom:12px;">Recent Activity</div>
+    <div class="card" style="padding:0;overflow:hidden;">
+      <table class="tbl">
+        <thead><tr><th>Product</th><th>Action</th><th>User</th><th>Date</th></tr></thead>
+        <tbody>
+          <tr><td class="td-primary">RIC — GL (Alabama Pilot)</td><td>Forms updated (v8)</td><td style="color:var(--text-muted);">Sarah Chen</td><td style="color:var(--text-muted);">2 days ago</td></tr>
+          <tr><td class="td-primary">Admitted GL — Full 52-State</td><td>Circular LI-GL-2023-089 adopted — all 52 states</td><td style="color:var(--text-muted);">Dan Roman</td><td style="color:var(--text-muted);">8 days ago</td></tr>
+          <tr><td class="td-primary">E&S GL — Surplus Lines</td><td>ERC package imported — GL CW 20260101 V01</td><td style="color:var(--text-muted);">Sarah Chen</td><td style="color:var(--text-muted);">21 days ago</td></tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+</div>
+
+<!-- ═══════════════════════════════════
+     S1 — PRODUCT SETUP
+═══════════════════════════════════ -->
+<div id="s1" class="screen">
+  <div class="topbar">
+    <span class="topbar-proto">PROTOTYPE</span>
+    <div class="bc">
+      <span class="bc-link" onclick="go('s0')">Product Studio</span>
+      <span class="bc-sep">/</span><span class="bc-cur">New ISO GL Product</span>
+    </div>
+  </div>
+  <div class="content">
+    <div class="pg-header">
+      <div class="pg-title">New ISO GL Product</div>
+      <div class="pg-sub">Configure a new General Liability product using ISO ERC content.</div>
+    </div>
+    <div class="stepper">
+      <div class="step-item"><div class="step-circle active">1</div><span class="step-label active">Product Setup</span></div>
+      <div class="step-line"></div>
+      <div class="step-item"><div class="step-circle pending">2</div><span class="step-label pending">Content Source</span></div>
+      <div class="step-line"></div>
+      <div class="step-item"><div class="step-circle pending">3</div><span class="step-label pending">Base Packages</span></div>
+      <div class="step-line"></div>
+      <div class="step-item"><div class="step-circle pending">4</div><span class="step-label pending">State Coverage</span></div>
+      <div class="step-line"></div>
+      <div class="step-item"><div class="step-circle pending">5</div><span class="step-label pending">Review</span></div>
+    </div>
+    <div style="max-width:560px;">
+      <div class="card">
+        <div class="form-group">
+          <label class="form-label">Product Name</label>
+          <input class="form-input" type="text" value="ISO General Liability — Admitted" />
+        </div>
+        <div class="form-row">
+          <div class="form-group" style="margin-bottom:0;">
+            <label class="form-label">Line of Business</label>
+            <select class="form-select"><option selected>General Liability</option></select>
+          </div>
+          <div class="form-group" style="margin-bottom:0;">
+            <label class="form-label">ISO Program</label>
+            <select class="form-select"><option selected>ISO Commercial General Liability</option></select>
+          </div>
+        </div>
+        <div style="margin-top:18px;">
+          <label class="form-label">Market Type</label>
+          <div class="radio-group">
+            <div class="radio-opt on"><div class="radio-dot"></div><span>Admitted</span></div>
+            <div class="radio-opt"><div class="radio-dot"></div><span>Excess &amp; Surplus</span></div>
+            <div class="radio-opt"><div class="radio-dot"></div><span>Both</span></div>
+          </div>
+        </div>
+        <div style="margin-top:18px;">
+          <label class="form-label">Initial Version Label</label>
+          <input class="form-input" type="text" value="v1" style="max-width:100px;" />
+        </div>
+      </div>
+    </div>
+  </div>
+  <div class="wiz-footer">
+    <button class="btn btn-ghost" onclick="go('s0')">← Cancel</button>
+    <button class="btn btn-primary" onclick="go('s2')">Next: Content Source →</button>
+  </div>
+</div>
+
+<!-- ═══════════════════════════════════
+     S2 — CONTENT SOURCE
+═══════════════════════════════════ -->
+<div id="s2" class="screen">
+  <div class="topbar">
+    <span class="topbar-proto">PROTOTYPE</span>
+    <div class="bc">
+      <span class="bc-link" onclick="go('s0')">Product Studio</span>
+      <span class="bc-sep">/</span>
+      <span class="bc-link" onclick="go('s1')">New Product</span>
+      <span class="bc-sep">/</span><span class="bc-cur">Content Source</span>
+    </div>
+  </div>
+  <div class="content">
+    <div class="pg-header">
+      <div class="pg-title">Select Content Source</div>
+      <div class="pg-sub">How should this product receive its rating content?</div>
+    </div>
+    <div class="stepper">
+      <div class="step-item"><div class="step-circle done">✓</div><span class="step-label done">Product Setup</span></div>
+      <div class="step-line done"></div>
+      <div class="step-item"><div class="step-circle active">2</div><span class="step-label active">Content Source</span></div>
+      <div class="step-line"></div>
+      <div class="step-item"><div class="step-circle pending">3</div><span class="step-label pending">Base Packages</span></div>
+      <div class="step-line"></div>
+      <div class="step-item"><div class="step-circle pending">4</div><span class="step-label pending">State Coverage</span></div>
+      <div class="step-line"></div>
+      <div class="step-item"><div class="step-circle pending">5</div><span class="step-label pending">Review</span></div>
+    </div>
+    <div class="option-cards" style="max-width:740px;">
+      <div class="option-card" onclick="selectSource(this)">
+        <div class="radio"></div>
+        <h4>Excel Spreadsheet</h4>
+        <p style="font-size:11px;color:var(--text-muted);margin-bottom:6px;">.xlsx, .xls, .csv</p>
+        <p>Upload a custom rate spreadsheet with your own table structure.</p>
+      </div>
+      <div class="option-card" onclick="selectSource(this)">
+        <div class="radio"></div>
+        <h4>API Specification</h4>
+        <p style="font-size:11px;color:var(--text-muted);margin-bottom:6px;">OpenAPI, Swagger</p>
+        <p>Connect to an external rating API endpoint.</p>
+      </div>
+      <div class="option-card selected" id="erc-option" onclick="selectSource(this)">
+        <div class="radio"></div>
+        <h4>ERC Ingestion</h4>
+        <p style="font-size:11px;color:var(--text-muted);margin-bottom:6px;">ISO/Verisk ERC package</p>
+        <p>Import ISO ERC with full rate tables, rules, domain tables, and form mappings.</p>
+      </div>
+    </div>
+    <div class="alert alert-blue" style="max-width:740px;">
+      <span class="alert-icon">⚡</span>
+      <div class="alert-text">
+        <strong>ERC Ingestion includes:</strong>&nbsp; Rate tables &amp; lookup contracts &nbsp;·&nbsp; 563 GL rules &amp; call graph &nbsp;·&nbsp; Domain table question catalog &nbsp;·&nbsp; Form field mappings (quote → bind → issue) &nbsp;·&nbsp; Bureau rule provenance &amp; circular history
+      </div>
+    </div>
+  </div>
+  <div class="wiz-footer">
+    <button class="btn btn-ghost" onclick="go('s1')">← Back</button>
+    <button class="btn btn-primary" onclick="go('s3')">Continue: Select Base Packages →</button>
+  </div>
+</div>
+
+<!-- ═══════════════════════════════════
+     S3 — CW BASE PACKAGES (multi-select)
+═══════════════════════════════════ -->
+<div id="s3" class="screen">
+  <div class="topbar">
+    <span class="topbar-proto">PROTOTYPE</span>
+    <div class="bc">
+      <span class="bc-link" onclick="go('s0')">Product Studio</span>
+      <span class="bc-sep">/</span>
+      <span class="bc-link" onclick="go('s1')">New Product</span>
+      <span class="bc-sep">/</span><span class="bc-cur">Base Packages</span>
+    </div>
+  </div>
+  <div class="content">
+    <div class="pg-header">
+      <div class="pg-title">Select ISO ERC Countrywide Base Packages</div>
+      <div class="pg-sub">Select one or more countrywide packages. Supporting multiple packages lets you cover different policy effective date windows simultaneously.</div>
+    </div>
+    <div class="stepper">
+      <div class="step-item"><div class="step-circle done">✓</div><span class="step-label done">Product Setup</span></div>
+      <div class="step-line done"></div>
+      <div class="step-item"><div class="step-circle done">✓</div><span class="step-label done">Content Source</span></div>
+      <div class="step-line done"></div>
+      <div class="step-item"><div class="step-circle active">3</div><span class="step-label active">Base Packages</span></div>
+      <div class="step-line"></div>
+      <div class="step-item"><div class="step-circle pending">4</div><span class="step-label pending">State Coverage</span></div>
+      <div class="step-line"></div>
+      <div class="step-item"><div class="step-circle pending">5</div><span class="step-label pending">Review</span></div>
+    </div>
+
+    <div class="pkg-sel-hint">
+      <span>Select all packages your product must support.</span>
+      <span class="pkg-sel-count" id="pkg-count">0 selected</span>
+    </div>
+
+    <div class="pkg-cards">
+      <!-- V01 2026 — LATEST -->
+      <div class="pkg-card selected" id="pkg-2026" onclick="togglePkg(this,'pkg-2026')">
+        <div class="pkg-card-top">
+          <div>
+            <div class="pkg-id">GL CW 20260101 V01</div>
+            <div style="display:flex;gap:6px;margin-top:5px;">
+              <span class="tag tag-latest">LATEST</span>
+              <span class="tag" style="color:#5b21b6;background:#ede9fe;border:1px solid #ddd6fe;font-size:10px;">RECOMMENDED</span>
+            </div>
+          </div>
+          <div class="pkg-check"></div>
+        </div>
+        <div class="pkg-meta">General Liability · Countrywide · Effective <strong style="color:var(--text);">Jan 1, 2026</strong></div>
+        <div class="pkg-stats">
+          <div class="pkg-stat">📋 <strong>563</strong>&nbsp;rules</div>
+          <div class="pkg-stat">📊 <strong>301</strong>&nbsp;rate tables</div>
+          <div class="pkg-stat">📄 <strong>3</strong>&nbsp;form files</div>
+          <div class="pkg-stat">🔔 <strong>9</strong>&nbsp;circulars</div>
+          <div class="pkg-stat">🗄️ <strong>214</strong>&nbsp;domain tables</div>
+          <div class="pkg-stat">📐 <strong>1</strong>&nbsp;XSD schema</div>
+        </div>
+        <div style="margin-top:12px;padding-top:12px;border-top:1px solid var(--border);">
+          <div style="font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.06em;color:var(--text-muted);margin-bottom:7px;">Circulars Included</div>
+          <div style="display:flex;flex-wrap:wrap;gap:4px;">
+            <span class="tag tag-forms-t" style="font-size:10px;">LI-GL-2025-206</span>
+            <span class="tag tag-forms-t" style="font-size:10px;">LI-GL-2023-089</span>
+            <span class="tag tag-rules-t" style="font-size:10px;">LI-GL-2022-317</span>
+            <span class="tag tag-rules-t" style="font-size:10px;">LI-GL-2022-017</span>
+            <span class="tag tag-rates-t" style="font-size:10px;">LI-GL-2021-052</span>
+            <span class="tag" style="font-size:10px;color:var(--text-muted);background:var(--raised);border:1px solid var(--border);">+4 more</span>
+          </div>
+        </div>
+        <div style="margin-top:10px;font-size:11px;color:var(--text-muted);">
+          <strong style="color:var(--text);">Use for:</strong> New business eff. Jan 1, 2026 and later; all current renewals.
+        </div>
+      </div>
+
+      <!-- V01 2025 — PRIOR -->
+      <div class="pkg-card" id="pkg-2025" onclick="togglePkg(this,'pkg-2025')">
+        <div class="pkg-card-top">
+          <div>
+            <div class="pkg-id">GL CW 20250101 V01</div>
+            <div style="display:flex;gap:6px;margin-top:5px;">
+              <span class="tag tag-behind">PRIOR</span>
+            </div>
+          </div>
+          <div class="pkg-check"></div>
+        </div>
+        <div class="pkg-meta">General Liability · Countrywide · Effective <strong style="color:var(--text);">Jan 1, 2025</strong></div>
+        <div class="pkg-stats">
+          <div class="pkg-stat">📋 <strong>549</strong>&nbsp;rules</div>
+          <div class="pkg-stat">📊 <strong>295</strong>&nbsp;rate tables</div>
+          <div class="pkg-stat">📄 <strong>3</strong>&nbsp;form files</div>
+          <div class="pkg-stat">🔔 <strong>8</strong>&nbsp;circulars</div>
+          <div class="pkg-stat">🗄️ <strong>198</strong>&nbsp;domain tables</div>
+          <div class="pkg-stat">📐 <strong>1</strong>&nbsp;XSD schema</div>
+        </div>
+        <div style="margin-top:12px;padding-top:12px;border-top:1px solid var(--border);">
+          <div style="font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.06em;color:var(--text-muted);margin-bottom:7px;">Circulars Included</div>
+          <div style="display:flex;flex-wrap:wrap;gap:4px;">
+            <span class="tag tag-forms-t" style="font-size:10px;">LI-GL-2023-089</span>
+            <span class="tag tag-rules-t" style="font-size:10px;">LI-GL-2022-317</span>
+            <span class="tag tag-rules-t" style="font-size:10px;">LI-GL-2022-017</span>
+            <span class="tag tag-rates-t" style="font-size:10px;">LI-GL-2021-052</span>
+            <span class="tag" style="font-size:10px;color:var(--text-muted);background:var(--raised);border:1px solid var(--border);">+4 more</span>
+          </div>
+          <div style="margin-top:8px;font-size:11px;color:#92400e;background:var(--amber-mid);padding:6px 8px;border-radius:6px;">
+            ⚠ Missing LI-GL-2025-206 (2025 CGL revisions)
+          </div>
+        </div>
+        <div style="margin-top:10px;font-size:11px;color:var(--text-muted);">
+          <strong style="color:var(--text);">Use for:</strong> Policies written Jan 1, 2025 – Dec 31, 2025 in legacy renewal workflows.
+        </div>
+      </div>
+
+      <!-- V01 2024 — OLDER -->
+      <div class="pkg-card" id="pkg-2024" onclick="togglePkg(this,'pkg-2024')">
+        <div class="pkg-card-top">
+          <div>
+            <div class="pkg-id">GL CW 20240101 V01</div>
+            <div style="display:flex;gap:6px;margin-top:5px;">
+              <span class="tag" style="color:#991b1b;background:#fee2e2;border:1px solid #fecaca;font-size:11px;">OLDER</span>
+            </div>
+          </div>
+          <div class="pkg-check"></div>
+        </div>
+        <div class="pkg-meta">General Liability · Countrywide · Effective <strong style="color:var(--text);">Jan 1, 2024</strong></div>
+        <div class="pkg-stats">
+          <div class="pkg-stat">📋 <strong>538</strong>&nbsp;rules</div>
+          <div class="pkg-stat">📊 <strong>287</strong>&nbsp;rate tables</div>
+          <div class="pkg-stat">📄 <strong>3</strong>&nbsp;form files</div>
+          <div class="pkg-stat">🔔 <strong>7</strong>&nbsp;circulars</div>
+          <div class="pkg-stat">🗄️ <strong>191</strong>&nbsp;domain tables</div>
+          <div class="pkg-stat">📐 <strong>1</strong>&nbsp;XSD schema</div>
+        </div>
+        <div style="margin-top:12px;padding-top:12px;border-top:1px solid var(--border);">
+          <div style="margin-top:0;font-size:11px;color:#991b1b;background:#fee2e2;padding:6px 8px;border-radius:6px;">
+            ✕ Missing 2 mandatory circulars (LI-GL-2025-206, LI-GL-2023-089). Not recommended for new use.
+          </div>
+        </div>
+        <div style="margin-top:10px;font-size:11px;color:var(--text-muted);">
+          <strong style="color:var(--text);">Use for:</strong> Audit support or in-run-off policies only.
+        </div>
+      </div>
+    </div>
+
+    <div class="info-box" style="max-width:100%;background:var(--blue-lt);border-color:var(--blue-mid);">
+      <h4 style="color:#1e40af;">Why select multiple packages?</h4>
+      <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:12px;">
+        <div style="font-size:12px;color:#1e40af;"><strong>Transition periods</strong> — Support renewals mid-transition when some policies were written under a prior effective date.</div>
+        <div style="font-size:12px;color:#1e40af;"><strong>Audit &amp; run-off</strong> — Keep older packages available for reproducing historical premium calculations without contaminating current content.</div>
+        <div style="font-size:12px;color:#1e40af;"><strong>Content version binding</strong> — Every quote and policy is pinned to the exact package version used at inception, regardless of what is current today.</div>
+      </div>
+    </div>
+  </div>
+  <div class="wiz-footer">
+    <button class="btn btn-ghost" onclick="go('s2')">← Back</button>
+    <button class="btn btn-primary" id="next-states-btn" onclick="go('s4')">Next: Configure States →</button>
+  </div>
+</div>
+
+<!-- ═══════════════════════════════════
+     S4 — STATE MATRIX
+═══════════════════════════════════ -->
+<div id="s4" class="screen">
+  <div class="topbar">
+    <span class="topbar-proto">PROTOTYPE</span>
+    <div class="bc">
+      <span class="bc-link" onclick="go('s0')">Product Studio</span>
+      <span class="bc-sep">/</span>
+      <span class="bc-link" onclick="go('s1')">New Product</span>
+      <span class="bc-sep">/</span><span class="bc-cur">State Coverage</span>
+    </div>
+  </div>
+  <div class="content">
+    <div class="pg-header">
+      <div class="pg-title">Configure State Coverage</div>
+      <div class="pg-sub">Select which states to enable. Each state uses its own versioned package overlaid on the selected countrywide bases.</div>
+    </div>
+    <div class="stepper">
+      <div class="step-item"><div class="step-circle done">✓</div><span class="step-label done">Product Setup</span></div>
+      <div class="step-line done"></div>
+      <div class="step-item"><div class="step-circle done">✓</div><span class="step-label done">Content Source</span></div>
+      <div class="step-line done"></div>
+      <div class="step-item"><div class="step-circle done">✓</div><span class="step-label done">Base Packages</span></div>
+      <div class="step-line done"></div>
+      <div class="step-item"><div class="step-circle active">4</div><span class="step-label active">State Coverage</span></div>
+      <div class="step-line"></div>
+      <div class="step-item"><div class="step-circle pending">5</div><span class="step-label pending">Review</span></div>
+    </div>
+
+    <div class="stats-row">
+      <div class="stat-chip"><div class="stat-num" id="sel-count">0</div><div class="stat-label">States Selected</div></div>
+      <div class="stat-chip"><div class="stat-num" style="color:var(--green);" id="cur-count">43</div><div class="stat-label">Current w/ CW</div></div>
+      <div class="stat-chip"><div class="stat-num" style="color:#d97706;">9</div><div class="stat-label">Circular Gap</div></div>
+      <div class="stat-chip"><div class="stat-num" style="color:var(--text-muted);">52</div><div class="stat-label">Total Available</div></div>
+    </div>
+
+    <div class="matrix-controls">
+      <div class="matrix-filter">
+        <button class="filter-btn on" id="fa" onclick="filterMatrix('all',this)">All States</button>
+        <button class="filter-btn" id="fc" onclick="filterMatrix('current',this)">Current Only</button>
+        <button class="filter-btn" id="fb" onclick="filterMatrix('behind',this)">Circular Gap</button>
+      </div>
+      <div class="matrix-sep"></div>
+      <button class="btn btn-outline btn-sm" onclick="selectAll()">Select All 52</button>
+      <button class="btn btn-outline btn-sm" onclick="selectCurrent()">Current Only</button>
+      <button class="btn btn-ghost btn-sm" onclick="clearAll()">Clear</button>
+      <span class="sel-count"><strong id="sel-label">0</strong> / 52 selected</span>
+    </div>
+
+    <div class="alert" id="behind-alert" style="display:none;">
+      <span class="alert-icon">⚠</span>
+      <div class="alert-text">
+        <strong>Circular gap states selected.</strong> These states haven't adopted LI-GL-2025-206 yet. They can still be enabled — the CW base serves as fallback for affected tables. Adoption tasks will be created in your Circulars queue automatically.
+      </div>
+    </div>
+
+    <div class="state-grid" id="state-grid"></div>
+
+    <div class="info-box">
+      <h4>Version &amp; Effective Date Legend</h4>
+      <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:10px;">
+        <div style="font-size:12px;color:var(--text-sec);display:flex;gap:8px;align-items:flex-start;"><span style="color:var(--green);font-weight:700;flex-shrink:0;">● Current</span>State package effective date is aligned with the selected CW base. State rows override CW where applicable.</div>
+        <div style="font-size:12px;color:var(--text-sec);display:flex;gap:8px;align-items:flex-start;"><span style="color:#d97706;font-weight:700;flex-shrink:0;">● Gap</span>State has a package but hasn't adopted the latest circular. CW base applies for affected tables pending adoption.</div>
+        <div style="font-size:12px;color:var(--text-sec);display:flex;gap:8px;align-items:flex-start;"><span style="color:var(--text-muted);font-weight:700;flex-shrink:0;">Eff Date</span>The effective date shown is the state package's own effective date — not necessarily the same as the CW base.</div>
+      </div>
+    </div>
+  </div>
+  <div class="wiz-footer">
+    <button class="btn btn-ghost" onclick="go('s3')">← Back</button>
+    <button class="btn btn-primary" id="next-review-btn" disabled style="opacity:.4;cursor:not-allowed;" onclick="if(selectedStates.size>0)go('s5')">Next: Review →</button>
+  </div>
+</div>
+
+<!-- ═══════════════════════════════════
+     S5 — REVIEW & CONFIRM
+═══════════════════════════════════ -->
+<div id="s5" class="screen">
+  <div class="topbar">
+    <span class="topbar-proto">PROTOTYPE</span>
+    <div class="bc">
+      <span class="bc-link" onclick="go('s0')">Product Studio</span>
+      <span class="bc-sep">/</span>
+      <span class="bc-link" onclick="go('s1')">New Product</span>
+      <span class="bc-sep">/</span><span class="bc-cur">Review</span>
+    </div>
+  </div>
+  <div class="content">
+    <div class="pg-header">
+      <div class="pg-title">Review &amp; Confirm</div>
+      <div class="pg-sub">Confirm your product configuration before creating.</div>
+    </div>
+    <div class="stepper">
+      <div class="step-item"><div class="step-circle done">✓</div><span class="step-label done">Product Setup</span></div>
+      <div class="step-line done"></div>
+      <div class="step-item"><div class="step-circle done">✓</div><span class="step-label done">Content Source</span></div>
+      <div class="step-line done"></div>
+      <div class="step-item"><div class="step-circle done">✓</div><span class="step-label done">Base Packages</span></div>
+      <div class="step-line done"></div>
+      <div class="step-item"><div class="step-circle done">✓</div><span class="step-label done">State Coverage</span></div>
+      <div class="step-line done"></div>
+      <div class="step-item"><div class="step-circle active">5</div><span class="step-label active">Review</span></div>
+    </div>
+
+    <div class="review-grid">
+      <div class="review-card">
+        <h3>Product</h3>
+        <div class="review-row"><span class="rr-label">Name</span><span class="rr-val">ISO General Liability — Admitted</span></div>
+        <div class="review-row"><span class="rr-label">LOB</span><span class="rr-val">General Liability</span></div>
+        <div class="review-row"><span class="rr-label">Program</span><span class="rr-val">ISO CGL</span></div>
+        <div class="review-row"><span class="rr-label">Market</span><span class="rr-val">Admitted</span></div>
+        <div class="review-row"><span class="rr-label">Version</span><span class="rr-val">v1 · Draft</span></div>
+      </div>
+      <div class="review-card">
+        <h3>Base Packages (2 selected)</h3>
+        <div style="display:flex;flex-direction:column;gap:6px;">
+          <div style="background:var(--raised);border:1px solid var(--border);border-radius:7px;padding:8px 10px;">
+            <div style="font-size:11px;font-weight:700;color:var(--text);font-family:monospace;">GL CW 20260101 V01</div>
+            <div style="font-size:11px;color:var(--text-muted);margin-top:2px;">Eff. Jan 1, 2026 · 563 rules · 9 circulars · <span class="tag tag-latest" style="font-size:9px;">LATEST</span></div>
+          </div>
+          <div style="background:var(--raised);border:1px solid var(--border);border-radius:7px;padding:8px 10px;">
+            <div style="font-size:11px;font-weight:700;color:var(--text);font-family:monospace;">GL CW 20250101 V01</div>
+            <div style="font-size:11px;color:var(--text-muted);margin-top:2px;">Eff. Jan 1, 2025 · 549 rules · 8 circulars · <span class="tag tag-behind" style="font-size:9px;">PRIOR</span></div>
+          </div>
+        </div>
+      </div>
+      <div class="review-card">
+        <h3>Content Readiness</h3>
+        <div class="check-row"><span style="color:var(--green);font-size:13px;">✓</span><span class="check-label">Rate tables &amp; lookup contracts</span></div>
+        <div class="check-row"><span style="color:var(--green);font-size:13px;">✓</span><span class="check-label">Rule graph &amp; algorithm map</span></div>
+        <div class="check-row"><span style="color:var(--green);font-size:13px;">✓</span><span class="check-label">Domain table question catalog</span></div>
+        <div class="check-row"><span style="color:var(--green);font-size:13px;">✓</span><span class="check-label">Form field mappings</span></div>
+        <div class="check-row"><span style="color:var(--green);font-size:13px;">✓</span><span class="check-label">JSON Schema API contracts</span></div>
+        <div class="check-row"><span style="color:#d97706;font-size:13px;">⚠</span><span class="check-label" style="color:#d97706;">9 states — circular adoption queued</span></div>
+      </div>
+    </div>
+
+    <div class="alert">
+      <span class="alert-icon">⚠</span>
+      <div class="alert-text">
+        <strong>9 states have a circular gap (LI-GL-2025-206):</strong> AZ, IL, LA, MS, MO, NM, NY, PR, WV. Adoption tasks will be created automatically in your ISO Circulars queue. CW base serves as fallback for affected tables until each state adopts.
+      </div>
+    </div>
+
+    <div style="margin-bottom:20px;">
+      <div style="font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.06em;color:var(--text-muted);margin-bottom:10px;">State Coverage Sample</div>
+      <div class="card" style="padding:0;overflow:hidden;">
+        <table class="tbl">
+          <thead><tr><th>State</th><th>Package</th><th>Version</th><th>Eff. Date</th><th>Circular Status</th><th>Rates</th><th>Rules</th><th>Forms</th></tr></thead>
+          <tbody>
+            <tr><td class="td-primary">Alabama</td><td style="font-family:monospace;font-size:11px;color:var(--text-muted);">GL_AL</td><td><span class="tag tag-current" style="font-size:10px;">V03</span></td><td style="font-size:11px;color:var(--text-muted);">Jan 1, 2026</td><td><span class="tag tag-current" style="font-size:10px;">Current</span></td><td style="color:var(--green);">✓</td><td style="color:var(--green);">✓</td><td style="color:var(--green);">✓</td></tr>
+            <tr><td class="td-primary">California</td><td style="font-family:monospace;font-size:11px;color:var(--text-muted);">GL_CA</td><td><span class="tag tag-current" style="font-size:10px;">V05</span></td><td style="font-size:11px;color:var(--text-muted);">Jan 1, 2026</td><td><span class="tag tag-current" style="font-size:10px;">Current</span></td><td style="color:var(--green);">✓</td><td style="color:var(--green);">✓</td><td style="color:var(--green);">✓</td></tr>
+            <tr><td class="td-primary">New York</td><td style="font-family:monospace;font-size:11px;color:var(--text-muted);">GL_NY</td><td><span class="tag tag-behind" style="font-size:10px;">V04</span></td><td style="font-size:11px;color:var(--text-muted);">Oct 1, 2024</td><td><span class="tag tag-behind" style="font-size:10px;">Gap: LI-GL-2025-206</span></td><td style="color:#d97706;">⚠</td><td style="color:#d97706;">⚠</td><td style="color:#d97706;">⚠</td></tr>
+            <tr><td class="td-primary">Texas</td><td style="font-family:monospace;font-size:11px;color:var(--text-muted);">GL_TX</td><td><span class="tag tag-current" style="font-size:10px;">V04</span></td><td style="font-size:11px;color:var(--text-muted);">Jan 1, 2026</td><td><span class="tag tag-current" style="font-size:10px;">Current</span></td><td style="color:var(--green);">✓</td><td style="color:var(--green);">✓</td><td style="color:var(--green);">✓</td></tr>
+            <tr><td style="color:var(--text-muted);font-style:italic;" colspan="8">… and <span id="review-remaining">48</span> more selected states</td></tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+
+    <div class="card" style="max-width:460px;background:var(--green-lt);border-color:#bbf7d0;">
+      <div style="font-size:13px;font-weight:700;color:var(--text);margin-bottom:8px;">Content Rights Confirmation</div>
+      <div class="radio-opt on" style="margin-bottom:8px;"><div class="radio-dot"></div><span>Organization has confirmed Verisk/ISO content rights for these packages</span></div>
+      <div style="font-size:11px;color:#166534;">Product will be created with status <strong>Internal Testing</strong> until promoted by a named approver.</div>
+    </div>
+  </div>
+  <div class="wiz-footer">
+    <button class="btn btn-ghost" onclick="go('s4')">← Back</button>
+    <button class="btn btn-blue" onclick="go('s6')">Create Product &amp; Import →</button>
+  </div>
+</div>
+
+<!-- ═══════════════════════════════════
+     S6 — PROGRESS
+═══════════════════════════════════ -->
+<div id="s6" class="screen">
+  <div class="topbar">
+    <span class="topbar-proto">PROTOTYPE</span>
+    <div class="bc">
+      <span class="bc-link" onclick="go('s0')">Product Studio</span>
+      <span class="bc-sep">/</span>
+      <span class="bc-link">ISO General Liability</span>
+      <span class="bc-sep">/</span><span class="bc-cur">Importing ERC Packages</span>
+    </div>
+  </div>
+  <div class="content">
+    <div class="pg-header">
+      <div class="pg-title">Importing ERC Packages</div>
+      <div class="pg-sub">2 countrywide bases · 52 states · 3,048 source files</div>
+    </div>
+    <div style="max-width:600px;">
+      <div style="margin-bottom:20px;">
+        <div style="display:flex;justify-content:space-between;font-size:12px;color:var(--text-muted);margin-bottom:6px;"><span>Overall progress</span><span id="pct">0%</span></div>
+        <div style="height:5px;background:var(--border);border-radius:3px;overflow:hidden;">
+          <div id="main-bar" style="height:100%;background:var(--blue);border-radius:3px;width:0%;transition:width .6s ease;"></div>
+        </div>
+      </div>
+      <div class="progress-list" id="progress-list">
+        <div class="progress-item" id="pi-0"><div class="pi-icon pending">📦</div><div class="pi-text"><div class="pi-title">Artifact Manifests &amp; Checksums</div><div class="pi-sub">Recording 3,048 files across 2 packages with SHA-256 checksums</div></div><span class="pi-status pending" id="ps-0">Queued</span></div>
+        <div class="progress-item" id="pi-1"><div class="pi-icon pending">📐</div><div class="pi-text"><div class="pi-title">XSD Schemas &amp; Data Path Catalogs</div><div class="pi-sub">Parsing MasterGLCW.DataDef.xsd — both package versions</div></div><span class="pi-status pending" id="ps-1">Queued</span></div>
+        <div class="progress-item" id="pi-2"><div class="pi-icon pending">🗄️</div><div class="pi-text"><div class="pi-title">Domain Tables</div><div class="pi-sub">Loading 412 domain tables, building question catalog</div></div><span class="pi-status pending" id="ps-2">Queued</span></div>
+        <div class="progress-item" id="pi-3"><div class="pi-icon pending">📊</div><div class="pi-text"><div class="pi-title">Rate Tables &amp; Lookup Contracts</div><div class="pi-sub">Pairing 596 CSV/XML table pairs across both packages</div></div><span class="pi-status pending" id="ps-3">Queued</span></div>
+        <div class="progress-item" id="pi-4"><div class="pi-icon pending">🔗</div><div class="pi-text"><div class="pi-title">Rule Graphs &amp; Algorithm Maps</div><div class="pi-sub">Parsing 1,112 rule files, building cross-version call graphs</div></div><span class="pi-status pending" id="ps-4">Queued</span></div>
+        <div class="progress-item" id="pi-5"><div class="pi-icon pending">📄</div><div class="pi-text"><div class="pi-title">Form Field Mappings</div><div class="pi-sub">Mapping form fields to data paths — quote → bind → issue stages</div></div><span class="pi-status pending" id="ps-5">Queued</span></div>
+        <div class="progress-item" id="pi-6"><div class="pi-icon pending">🗺️</div><div class="pi-text"><div class="pi-title">State Package Overlays</div><div class="pi-sub">Computing CW delta maps for 52 states × 2 base packages</div><div class="progress-bar-wrap" id="state-bar-wrap" style="display:none;"><div class="progress-bar-fill" id="state-bar" style="width:0%;"></div></div></div><span class="pi-status pending" id="ps-6">Queued</span></div>
+        <div class="progress-item" id="pi-7"><div class="pi-icon pending">📡</div><div class="pi-text"><div class="pi-title">API Schema Generation</div><div class="pi-sub">Generating versioned rating_request, quote, bind, issue schemas per package</div></div><span class="pi-status pending" id="ps-7">Queued</span></div>
+        <div class="progress-item" id="pi-8"><div class="pi-icon pending">🔔</div><div class="pi-text"><div class="pi-title">Circular Registry &amp; Adoption Queue</div><div class="pi-sub">Registering 9 circulars, creating adoption tasks for 9 states</div></div><span class="pi-status pending" id="ps-8">Queued</span></div>
+      </div>
+      <div id="progress-done" style="display:none;margin-top:18px;">
+        <div class="success-banner">
+          <div class="success-icon">✓</div>
+          <div class="success-text"><h4>Import Complete</h4><p>2 CW packages · 52 states · 9 circulars registered · 9 adoption tasks created</p></div>
+        </div>
+        <button class="btn btn-primary" onclick="go('s7')">View Product →</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ═══════════════════════════════════
+     S7 — PRODUCT (SUCCESS)
+═══════════════════════════════════ -->
+<div id="s7" class="screen">
+  <div class="topbar">
+    <span class="topbar-proto">PROTOTYPE</span>
+    <div class="bc">
+      <span class="bc-link" onclick="go('s0')">Product Studio</span>
+      <span class="bc-sep">/</span>
+      <span class="bc-link">ISO General Liability</span>
+      <span class="bc-sep">/</span><span class="bc-cur">Version 1</span>
+    </div>
+    <div class="topbar-right">
+      <button class="btn btn-ghost btn-sm">← All Versions &nbsp; v1</button>
+      <span class="tag tag-draft">DRAFT</span>
+      <button class="btn btn-primary">Publish</button>
+    </div>
+  </div>
+  <div style="display:flex;flex:1;overflow:hidden;">
+    <div class="prod-nav">
+      <div class="prod-nav-header">
+        <div class="prod-nav-title">ISO General Liability</div>
+        <div style="display:flex;align-items:center;gap:6px;margin-top:4px;">
+          <span class="tag tag-admitted" style="font-size:10px;">ADMITTED</span>
+          <span style="font-size:12px;color:var(--text-muted);">52 jurisdictions</span>
+        </div>
+        <div style="margin-top:8px;display:flex;gap:5px;flex-wrap:wrap;">
+          <span class="tag" style="font-size:10px;color:#1e40af;background:#dbeafe;border:1px solid #bfdbfe;font-family:monospace;">CW 20260101 V01</span>
+          <span class="tag" style="font-size:10px;color:#92400e;background:#fef3c7;border:1px solid #fde68a;font-family:monospace;">CW 20250101 V01</span>
+        </div>
+      </div>
+      <div class="prod-nav-section">Version Contents</div>
+      <div class="prod-nav-item">Manage</div>
+      <div class="prod-nav-item on">Rater</div>
+      <div class="prod-nav-item">Forms <span class="prod-nav-badge">6</span></div>
+      <div class="prod-nav-item">Quoting Workflow</div>
+      <div class="prod-nav-footer">
+        <div style="font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.06em;color:var(--text-muted);margin-bottom:8px;">ISO Circulars</div>
+        <div style="background:var(--amber-mid);border:1px solid #fde68a;border-radius:7px;padding:10px;">
+          <div style="font-size:12px;color:#92400e;font-weight:700;margin-bottom:4px;">9 Adoption Tasks</div>
+          <div style="font-size:11px;color:#78350f;">LI-GL-2025-206 pending: AZ, IL, LA +6</div>
+          <button class="btn btn-ghost btn-sm" style="margin-top:8px;width:100%;justify-content:center;border-color:#fde68a;color:#92400e;" onclick="go('s8')">View Circulars →</button>
+        </div>
+      </div>
+    </div>
+
+    <div class="content">
+      <div class="success-banner">
+        <div class="success-icon">✓</div>
+        <div class="success-text"><h4>ERC Packages Imported Successfully</h4><p>GL CW 20260101 V01 + GL CW 20250101 V01 · 52 states · 3,048 source files · 9 circulars</p></div>
+      </div>
+
+      <div style="font-size:15px;font-weight:700;color:var(--text);margin-bottom:4px;">Rater</div>
+      <div style="font-size:13px;color:var(--text-sec);margin-bottom:20px;">ISO GL ERC ingestion complete · 2 countrywide bases · 52 state overlays · content version binding active</div>
+
+      <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:12px;margin-bottom:24px;">
+        <div class="card card-sm" style="text-align:center;">
+          <div style="font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.07em;color:var(--text-muted);margin-bottom:8px;">Rate Tables</div>
+          <div style="font-size:28px;font-weight:800;color:var(--text);">596</div>
+          <div style="font-size:11px;color:var(--text-muted);margin-bottom:6px;">Across both packages</div>
+          <div style="font-size:11px;color:var(--green);font-weight:600;">✓ All QA-passed</div>
+        </div>
+        <div class="card card-sm" style="text-align:center;">
+          <div style="font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.07em;color:var(--text-muted);margin-bottom:8px;">Rule Graph</div>
+          <div style="font-size:28px;font-weight:800;color:var(--text);">1,112</div>
+          <div style="font-size:11px;color:var(--text-muted);margin-bottom:6px;">Rule files · 2 packages</div>
+          <div style="font-size:11px;color:#d97706;font-weight:600;">⚠ 14 flagged for review</div>
+        </div>
+        <div class="card card-sm" style="text-align:center;">
+          <div style="font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.07em;color:var(--text-muted);margin-bottom:8px;">States Active</div>
+          <div style="font-size:28px;font-weight:800;color:var(--text);">52</div>
+          <div style="font-size:11px;color:var(--text-muted);margin-bottom:6px;">CW delta maps built</div>
+          <div style="font-size:11px;color:#d97706;font-weight:600;">⚠ 9 circular gaps</div>
+        </div>
+        <div class="card card-sm" style="text-align:center;">
+          <div style="font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.07em;color:var(--text-muted);margin-bottom:8px;">CW Bases</div>
+          <div style="font-size:28px;font-weight:800;color:var(--text);">2</div>
+          <div style="font-size:11px;color:var(--text-muted);margin-bottom:6px;">2026 + 2025</div>
+          <div style="font-size:11px;color:var(--green);font-weight:600;">✓ Version binding active</div>
+        </div>
+      </div>
+
+      <div style="font-size:13px;font-weight:700;color:var(--text);margin-bottom:10px;">Content Provenance</div>
+      <div class="card" style="padding:0;overflow:hidden;margin-bottom:18px;">
+        <table class="tbl">
+          <thead><tr><th>Artifact Type</th><th>Count</th><th>Packages</th><th>QA Status</th></tr></thead>
+          <tbody>
+            <tr><td class="td-primary">Rate Table CSV/XML pairs</td><td>596</td><td style="color:var(--text-muted);">2026 + 2025</td><td><span class="tag tag-current" style="font-size:10px;">All Passed</span></td></tr>
+            <tr><td class="td-primary">Domain Table CSV/XML pairs</td><td>412</td><td style="color:var(--text-muted);">2026 + 2025</td><td><span class="tag tag-current" style="font-size:10px;">All Passed</span></td></tr>
+            <tr><td class="td-primary">Rule XML files</td><td>1,112</td><td style="color:var(--text-muted);">2026 + 2025</td><td><span class="tag tag-behind" style="font-size:10px;">14 Flagged</span></td></tr>
+            <tr><td class="td-primary">Form field CSV files</td><td>6</td><td style="color:var(--text-muted);">2026 + 2025</td><td><span class="tag tag-current" style="font-size:10px;">All Passed</span></td></tr>
+            <tr><td class="td-primary">State package overlays</td><td>52</td><td style="color:var(--text-muted);">Both bases</td><td><span class="tag tag-current" style="font-size:10px;">All Passed</span></td></tr>
+          </tbody>
+        </table>
+      </div>
+      <div style="display:flex;gap:8px;">
+        <button class="btn btn-outline btn-sm">View Rule Flags</button>
+        <button class="btn btn-outline btn-sm">Browse Rate Tables</button>
+        <button class="btn btn-outline btn-sm" onclick="go('s8')">Circular Queue →</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ═══════════════════════════════════
+     S8 — CIRCULAR MANAGEMENT
+═══════════════════════════════════ -->
+<div id="s8" class="screen">
+  <div class="topbar">
+    <span class="topbar-proto">PROTOTYPE</span>
+    <div class="bc">
+      <span class="bc-link" onclick="go('s0')">Product Studio</span>
+      <span class="bc-sep">/</span>
+      <span class="bc-link" onclick="go('s7')">ISO General Liability</span>
+      <span class="bc-sep">/</span><span class="bc-cur">ISO Circulars</span>
+    </div>
+    <div class="topbar-right">
+      <button class="btn btn-outline btn-sm">↑ Upload Circular</button>
+    </div>
+  </div>
+  <div class="content">
+    <div class="pg-header">
+      <div class="pg-title">ISO Circulars</div>
+      <div class="pg-sub">Adoption tracking · ISO General Liability · GL CW 20260101 V01 + GL CW 20250101 V01</div>
+    </div>
+    <div class="stats-row">
+      <div class="stat-chip"><div class="stat-num">9</div><div class="stat-label">Adoption Tasks</div></div>
+      <div class="stat-chip"><div class="stat-num" style="color:#d97706;">9</div><div class="stat-label">In Review</div></div>
+      <div class="stat-chip"><div class="stat-num" style="color:var(--red);">0</div><div class="stat-label">Overdue</div></div>
+      <div class="stat-chip"><div class="stat-num" style="color:var(--green);">43</div><div class="stat-label">States Current</div></div>
+      <div class="stat-chip"><div class="stat-num" style="color:var(--purple);">1</div><div class="stat-label">Upcoming</div></div>
+    </div>
+
+    <div style="display:flex;align-items:center;gap:8px;margin-bottom:14px;flex-wrap:wrap;">
+      <input class="form-input" placeholder="Filter by circular ID or title…" style="max-width:220px;padding:6px 10px;font-size:12px;" />
+      <select class="form-select" style="max-width:120px;padding:6px 10px;font-size:12px;"><option>All Status</option><option>In Review</option><option>Adopted</option></select>
+      <select class="form-select" style="max-width:120px;padding:6px 10px;font-size:12px;"><option>All Types</option><option>Forms</option><option>Rules</option><option>Loss Costs</option></select>
+      <select class="form-select" style="max-width:120px;padding:6px 10px;font-size:12px;"><option>All States</option><option>AZ</option><option>IL</option><option>NY</option><option>WV</option></select>
+    </div>
+
+    <div class="card" style="padding:0;overflow:hidden;margin-bottom:22px;">
+      <table class="tbl">
+        <thead><tr><th>Circular ID</th><th>Title / Scope</th><th>Type</th><th>Affected States</th><th>ISO Effective</th><th>Deadline</th><th>Status</th><th>Owner</th></tr></thead>
+        <tbody>
+          <tr>
+            <td><span style="color:var(--blue);font-weight:700;cursor:pointer;font-size:12px;font-family:monospace;">LI-GL-2025-206</span></td>
+            <td class="td-primary" style="max-width:200px;"><div style="font-size:12px;">2025 CGL Multistate Forms &amp; Rules</div><div style="font-size:11px;color:var(--text-muted);">GL · 9 states behind</div></td>
+            <td><span class="tag tag-forms-t" style="font-size:10px;">Forms</span> <span class="tag tag-rules-t" style="font-size:10px;">Rules</span></td>
+            <td><div style="display:flex;flex-wrap:wrap;gap:3px;"><span class="tag tag-behind" style="font-size:10px;">AZ</span><span class="tag tag-behind" style="font-size:10px;">IL</span><span class="tag tag-behind" style="font-size:10px;">NY</span><span class="tag tag-behind" style="font-size:10px;">+6</span></div></td>
+            <td style="font-size:12px;color:var(--text-muted);">Jan 1, 2026</td>
+            <td style="font-size:12px;color:#d97706;font-weight:600;">Mar 1, 2026</td>
+            <td><span class="tag tag-behind" style="font-size:10px;">⚠ In Review</span></td>
+            <td style="font-size:12px;color:var(--text-muted);">—</td>
+          </tr>
+          <tr>
+            <td><span style="color:var(--blue);font-weight:700;cursor:pointer;font-size:12px;font-family:monospace;">LI-GL-2023-089</span></td>
+            <td class="td-primary" style="max-width:200px;"><div style="font-size:12px;">Cyber / Data Privacy Endorsements</div><div style="font-size:11px;color:var(--text-muted);">GL · All states adopted</div></td>
+            <td><span class="tag tag-forms-t" style="font-size:10px;">Forms</span> <span class="tag tag-rules-t" style="font-size:10px;">Rules</span></td>
+            <td><span class="tag tag-current" style="font-size:10px;">All 52 ✓</span></td>
+            <td style="font-size:12px;color:var(--text-muted);">Dec 1, 2023</td>
+            <td style="font-size:12px;color:var(--text-muted);">—</td>
+            <td><span class="tag tag-current" style="font-size:10px;">✓ Adopted</span></td>
+            <td style="font-size:12px;color:var(--text-muted);">Sarah Chen</td>
+          </tr>
+          <tr>
+            <td><span style="color:var(--blue);font-weight:700;cursor:pointer;font-size:12px;font-family:monospace;">LI-GL-2022-317</span></td>
+            <td class="td-primary" style="max-width:200px;"><div style="font-size:12px;">PFAS Exclusion Endorsements</div><div style="font-size:11px;color:var(--text-muted);">GL · All states adopted</div></td>
+            <td><span class="tag tag-forms-t" style="font-size:10px;">Forms</span> <span class="tag tag-rules-t" style="font-size:10px;">Rules</span></td>
+            <td><span class="tag tag-current" style="font-size:10px;">All 52 ✓</span></td>
+            <td style="font-size:12px;color:var(--text-muted);">May 1, 2023</td>
+            <td style="font-size:12px;color:var(--text-muted);">—</td>
+            <td><span class="tag tag-current" style="font-size:10px;">✓ Adopted</span></td>
+            <td style="font-size:12px;color:var(--text-muted);">Dan Roman</td>
+          </tr>
+          <tr>
+            <td><span style="color:var(--purple);font-weight:700;cursor:pointer;font-size:12px;font-family:monospace;">GL-MU-2027-RU-001</span></td>
+            <td class="td-primary" style="max-width:200px;"><div style="font-size:12px;">2027 GL Manual Rules Update</div><div style="font-size:11px;color:var(--text-muted);">GL · Upcoming</div></td>
+            <td><span class="tag tag-rules-t" style="font-size:10px;">Rules</span></td>
+            <td><span class="tag tag-new" style="font-size:10px;">TBD</span></td>
+            <td style="font-size:12px;color:var(--text-muted);">Jan 1, 2027</td>
+            <td style="font-size:12px;color:var(--text-muted);">TBD</td>
+            <td><span class="tag tag-new" style="font-size:10px;">Upcoming</span></td>
+            <td style="font-size:12px;color:var(--text-muted);">—</td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+
+    <div style="font-size:13px;font-weight:700;color:var(--text);margin-bottom:12px;">LI-GL-2025-206 — Adoption Task Detail</div>
+    <div style="display:grid;grid-template-columns:1fr 1.8fr;gap:14px;">
+      <div class="card card-sm">
+        <div style="font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.06em;color:var(--text-muted);margin-bottom:10px;">Circular Scope</div>
+        <div class="check-row"><span style="color:#d97706;font-size:13px;">⚠</span><span class="check-label">4 rules changed</span></div>
+        <div class="check-row"><span style="color:#d97706;font-size:13px;">⚠</span><span class="check-label">2 new endorsement forms</span></div>
+        <div class="check-row"><span style="color:#d97706;font-size:13px;">⚠</span><span class="check-label">1 rate table updated</span></div>
+        <div class="check-row"><span style="color:var(--green);font-size:13px;">✓</span><span class="check-label">Domain tables unchanged</span></div>
+        <div style="margin-top:14px;padding-top:12px;border-top:1px solid var(--border);">
+          <div style="font-size:12px;color:var(--text-muted);margin-bottom:8px;">Next action</div>
+          <button class="btn btn-blue btn-sm" style="width:100%;justify-content:center;">Begin Compliance Review →</button>
+        </div>
+      </div>
+      <div class="card card-sm">
+        <div style="font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.06em;color:var(--text-muted);margin-bottom:10px;">Adoption Status by State</div>
+        <table class="tbl" style="font-size:11px;">
+          <thead><tr><th>State</th><th>Curr. Pkg</th><th>Pkg Eff. Date</th><th>Deadline</th><th>Status</th></tr></thead>
+          <tbody>
+            <tr><td class="td-primary">AZ</td><td style="font-family:monospace;color:var(--text-muted);">V02</td><td style="color:var(--text-muted);">Jan 1, 2025</td><td style="color:#d97706;">Mar 1, 2026</td><td><span class="tag tag-behind" style="font-size:9px;">In Review</span></td></tr>
+            <tr><td class="td-primary">IL</td><td style="font-family:monospace;color:var(--text-muted);">V03</td><td style="color:var(--text-muted);">Jul 1, 2025</td><td style="color:#d97706;">Mar 1, 2026</td><td><span class="tag tag-behind" style="font-size:9px;">In Review</span></td></tr>
+            <tr><td class="td-primary">LA</td><td style="font-family:monospace;color:var(--text-muted);">V02</td><td style="color:var(--text-muted);">Apr 1, 2024</td><td style="color:#d97706;">Apr 1, 2026</td><td><span class="tag tag-behind" style="font-size:9px;">In Review</span></td></tr>
+            <tr><td class="td-primary">MS</td><td style="font-family:monospace;color:var(--text-muted);">V02</td><td style="color:var(--text-muted);">Apr 1, 2024</td><td style="color:#d97706;">Apr 1, 2026</td><td><span class="tag tag-behind" style="font-size:9px;">In Review</span></td></tr>
+            <tr><td class="td-primary">MO</td><td style="font-family:monospace;color:var(--text-muted);">V03</td><td style="color:var(--text-muted);">Jul 1, 2025</td><td style="color:#d97706;">Mar 1, 2026</td><td><span class="tag tag-behind" style="font-size:9px;">In Review</span></td></tr>
+            <tr><td class="td-primary">NM</td><td style="font-family:monospace;color:var(--text-muted);">V01</td><td style="color:var(--text-muted);">Oct 1, 2023</td><td style="color:var(--red);font-weight:700;">Feb 1, 2026</td><td><span class="tag tag-behind" style="font-size:9px;">In Review</span></td></tr>
+            <tr><td class="td-primary">NY</td><td style="font-family:monospace;color:var(--text-muted);">V04</td><td style="color:var(--text-muted);">Oct 1, 2024</td><td style="color:var(--text-muted);">Prior Approval</td><td><span class="tag tag-new" style="font-size:9px;">DOI Filing</span></td></tr>
+            <tr><td class="td-primary">PR</td><td style="font-family:monospace;color:var(--text-muted);">V01</td><td style="color:var(--text-muted);">Jul 1, 2024</td><td style="color:#d97706;">Jun 1, 2026</td><td><span class="tag tag-behind" style="font-size:9px;">In Review</span></td></tr>
+            <tr><td class="td-primary">WV</td><td style="font-family:monospace;color:var(--text-muted);">V01</td><td style="color:var(--text-muted);">Jan 1, 2024</td><td style="color:#d97706;">Apr 1, 2026</td><td><span class="tag tag-behind" style="font-size:9px;">In Review</span></td></tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+</div>
+
+</div><!-- end .main -->
+
+<script>
+// ── NAVIGATION ─────────────────────────────────
+function go(id){
+  document.querySelectorAll('.screen').forEach(s=>s.classList.remove('active'));
+  document.getElementById(id).classList.add('active');
+  if(id==='s6') startProgress();
+  if(id==='s4') buildMatrix();
+  if(id==='s5') updateReviewCount();
+}
+
+// ── CONTENT SOURCE SELECTION ───────────────────
+function selectSource(el){
+  document.querySelectorAll('.option-card').forEach(c=>c.classList.remove('selected'));
+  el.classList.add('selected');
+}
+
+// ── MULTI-SELECT CW PACKAGES ──────────────────
+const selectedPkgs = new Set(['pkg-2026']); // default: latest selected
+function togglePkg(el, id){
+  if(selectedPkgs.has(id)){
+    if(selectedPkgs.size===1) return; // must keep at least 1
+    selectedPkgs.delete(id);
+    el.classList.remove('selected');
+  } else {
+    selectedPkgs.add(id);
+    el.classList.add('selected');
+  }
+  const n = selectedPkgs.size;
+  document.getElementById('pkg-count').textContent = n + (n===1?' package selected':' packages selected');
+}
+// init count label
+document.getElementById('pkg-count').textContent = '1 package selected';
+
+// ── STATE DATA ─────────────────────────────────
+const STATES = [
+  {code:'AL',name:'Alabama',    ver:'V03',status:'current', eff:'Jan 1, 2026'},
+  {code:'AK',name:'Alaska',     ver:'V01',status:'current', eff:'Jan 1, 2023'},
+  {code:'AZ',name:'Arizona',    ver:'V02',status:'behind',  eff:'Jan 1, 2025'},
+  {code:'AR',name:'Arkansas',   ver:'V03',status:'current', eff:'Jan 1, 2026'},
+  {code:'CA',name:'California', ver:'V05',status:'current', eff:'Jan 1, 2026'},
+  {code:'CO',name:'Colorado',   ver:'V03',status:'current', eff:'Jul 1, 2025'},
+  {code:'CT',name:'Connecticut',ver:'V03',status:'current', eff:'Jan 1, 2026'},
+  {code:'DC',name:'D.C.',       ver:'V02',status:'current', eff:'Jan 1, 2025'},
+  {code:'DE',name:'Delaware',   ver:'V02',status:'current', eff:'Jan 1, 2025'},
+  {code:'FL',name:'Florida',    ver:'V04',status:'current', eff:'Jan 1, 2026'},
+  {code:'GA',name:'Georgia',    ver:'V03',status:'current', eff:'Jul 1, 2025'},
+  {code:'HI',name:'Hawaii',     ver:'V02',status:'current', eff:'Jul 1, 2024'},
+  {code:'ID',name:'Idaho',      ver:'V01',status:'current', eff:'Jan 1, 2023'},
+  {code:'IL',name:'Illinois',   ver:'V03',status:'behind',  eff:'Jul 1, 2025'},
+  {code:'IN',name:'Indiana',    ver:'V02',status:'current', eff:'Jan 1, 2025'},
+  {code:'IA',name:'Iowa',       ver:'V02',status:'current', eff:'Jan 1, 2025'},
+  {code:'KS',name:'Kansas',     ver:'V02',status:'current', eff:'Jul 1, 2024'},
+  {code:'KY',name:'Kentucky',   ver:'V02',status:'current', eff:'Jan 1, 2025'},
+  {code:'LA',name:'Louisiana',  ver:'V02',status:'behind',  eff:'Apr 1, 2024'},
+  {code:'ME',name:'Maine',      ver:'V01',status:'current', eff:'Jul 1, 2023'},
+  {code:'MD',name:'Maryland',   ver:'V03',status:'current', eff:'Jul 1, 2025'},
+  {code:'MA',name:'Massachusetts',ver:'V04',status:'current',eff:'Jan 1, 2026'},
+  {code:'MI',name:'Michigan',   ver:'V03',status:'current', eff:'Jan 1, 2026'},
+  {code:'MN',name:'Minnesota',  ver:'V02',status:'current', eff:'Jan 1, 2025'},
+  {code:'MS',name:'Mississippi',ver:'V02',status:'behind',  eff:'Apr 1, 2024'},
+  {code:'MO',name:'Missouri',   ver:'V03',status:'behind',  eff:'Jul 1, 2025'},
+  {code:'MT',name:'Montana',    ver:'V01',status:'current', eff:'Jan 1, 2023'},
+  {code:'NE',name:'Nebraska',   ver:'V02',status:'current', eff:'Jul 1, 2024'},
+  {code:'NV',name:'Nevada',     ver:'V02',status:'current', eff:'Jan 1, 2025'},
+  {code:'NH',name:'New Hampshire',ver:'V02',status:'current',eff:'Jan 1, 2025'},
+  {code:'NJ',name:'New Jersey', ver:'V04',status:'current', eff:'Jan 1, 2026'},
+  {code:'NM',name:'New Mexico', ver:'V01',status:'behind',  eff:'Oct 1, 2023'},
+  {code:'NY',name:'New York',   ver:'V04',status:'behind',  eff:'Oct 1, 2024'},
+  {code:'NC',name:'North Carolina',ver:'V03',status:'current',eff:'Jul 1, 2025'},
+  {code:'ND',name:'North Dakota',ver:'V01',status:'current',eff:'Jan 1, 2023'},
+  {code:'OH',name:'Ohio',       ver:'V03',status:'current', eff:'Jan 1, 2026'},
+  {code:'OK',name:'Oklahoma',   ver:'V02',status:'current', eff:'Jul 1, 2024'},
+  {code:'OR',name:'Oregon',     ver:'V02',status:'current', eff:'Jan 1, 2025'},
+  {code:'PA',name:'Pennsylvania',ver:'V04',status:'current',eff:'Jan 1, 2026'},
+  {code:'PR',name:'Puerto Rico',ver:'V01',status:'behind',  eff:'Jul 1, 2024'},
+  {code:'RI',name:'Rhode Island',ver:'V02',status:'current',eff:'Jan 1, 2025'},
+  {code:'SC',name:'South Carolina',ver:'V02',status:'current',eff:'Jul 1, 2024'},
+  {code:'SD',name:'South Dakota',ver:'V01',status:'current',eff:'Jan 1, 2023'},
+  {code:'TN',name:'Tennessee',  ver:'V02',status:'current', eff:'Jan 1, 2025'},
+  {code:'TX',name:'Texas',      ver:'V04',status:'current', eff:'Jan 1, 2026'},
+  {code:'UT',name:'Utah',       ver:'V02',status:'current', eff:'Jul 1, 2024'},
+  {code:'VT',name:'Vermont',    ver:'V01',status:'current', eff:'Jul 1, 2023'},
+  {code:'VA',name:'Virginia',   ver:'V03',status:'current', eff:'Jul 1, 2025'},
+  {code:'WA',name:'Washington', ver:'V03',status:'current', eff:'Jan 1, 2026'},
+  {code:'WV',name:'West Virginia',ver:'V01',status:'behind',eff:'Jan 1, 2024'},
+  {code:'WI',name:'Wisconsin',  ver:'V02',status:'current', eff:'Jan 1, 2025'},
+  {code:'WY',name:'Wyoming',    ver:'V01',status:'current', eff:'Jan 1, 2023'},
+];
+
+let selectedStates = new Set();
+let matrixBuilt = false;
+
+function buildMatrix(){
+  if(matrixBuilt) return;
+  matrixBuilt = true;
+  const grid = document.getElementById('state-grid');
+  grid.innerHTML = '';
+  STATES.forEach(s=>{
+    const div = document.createElement('div');
+    div.className = 'state-cell';
+    div.id = 'cell-'+s.code;
+    div.dataset.status = s.status;
+    div.innerHTML = `
+      <span class="sc-code">${s.code}</span>
+      <span class="sc-name">${s.name}</span>
+      <span class="sc-ver"><span class="sc-dot ${s.status}"></span>${s.ver}</span>
+      <span class="sc-eff">${s.eff}</span>
+      <div class="sc-chk">${selectedStates.has(s.code)?'✓':''}</div>`;
+    div.onclick = ()=>toggleState(s.code, s.status);
+    grid.appendChild(div);
+  });
+}
+
+function toggleState(code, status){
+  if(selectedStates.has(code)){
+    selectedStates.delete(code);
+    document.getElementById('cell-'+code).classList.remove('sel','sel-behind');
+    document.querySelector('#cell-'+code+' .sc-chk').textContent='';
+  } else {
+    selectedStates.add(code);
+    const cls = status==='behind'?'sel-behind':'sel';
+    document.getElementById('cell-'+code).classList.add(cls);
+    document.querySelector('#cell-'+code+' .sc-chk').textContent='✓';
+  }
+  updateSelCount();
+}
+
+function updateSelCount(){
+  const n = selectedStates.size;
+  document.getElementById('sel-count').textContent = n;
+  document.getElementById('sel-label').textContent = n;
+  const btn = document.getElementById('next-review-btn');
+  if(n>0){btn.disabled=false;btn.style.opacity='1';btn.style.cursor='pointer';}
+  else{btn.disabled=true;btn.style.opacity='.4';btn.style.cursor='not-allowed';}
+  const behindSel = STATES.filter(s=>s.status==='behind'&&selectedStates.has(s.code)).length;
+  document.getElementById('behind-alert').style.display = behindSel>0?'flex':'none';
+}
+
+function selectAll(){
+  STATES.forEach(s=>{
+    selectedStates.add(s.code);
+    const cell = document.getElementById('cell-'+s.code);
+    if(cell){cell.classList.remove('sel','sel-behind');cell.classList.add(s.status==='behind'?'sel-behind':'sel');cell.querySelector('.sc-chk').textContent='✓';}
+  });
+  updateSelCount();
+}
+
+function selectCurrent(){
+  clearAll();
+  STATES.filter(s=>s.status==='current').forEach(s=>{
+    selectedStates.add(s.code);
+    const cell=document.getElementById('cell-'+s.code);
+    if(cell){cell.classList.add('sel');cell.querySelector('.sc-chk').textContent='✓';}
+  });
+  updateSelCount();
+}
+
+function clearAll(){
+  selectedStates.clear();
+  STATES.forEach(s=>{
+    const cell=document.getElementById('cell-'+s.code);
+    if(cell){cell.classList.remove('sel','sel-behind');cell.querySelector('.sc-chk').textContent='';}
+  });
+  updateSelCount();
+}
+
+function filterMatrix(f,btn){
+  document.querySelectorAll('.filter-btn').forEach(b=>b.classList.remove('on'));
+  btn.classList.add('on');
+  STATES.forEach(s=>{
+    const cell=document.getElementById('cell-'+s.code);
+    if(!cell) return;
+    if(f==='all') cell.style.display='';
+    else if(f==='current') cell.style.display=s.status==='current'?'':'none';
+    else if(f==='behind') cell.style.display=s.status==='behind'?'':'none';
+  });
+}
+
+function updateReviewCount(){
+  const n = selectedStates.size;
+  const el = document.getElementById('review-remaining');
+  if(el) el.textContent = Math.max(0,n-4);
+}
+
+// ── PROGRESS SIMULATION ────────────────────────
+const STEPS=[
+  {delay:400, pct:10},
+  {delay:800, pct:20},
+  {delay:700, pct:32},
+  {delay:1100,pct:47},
+  {delay:1400,pct:61},
+  {delay:700, pct:72},
+  {delay:1900,pct:86},
+  {delay:700, pct:94},
+  {delay:600, pct:100},
+];
+const DONE_TEXT=['1,524+1,524 files checksummed','Data path catalogs built','412 domain tables loaded','596 table pairs QA-passed','1,112 rule files · 14 flagged','6 form files mapped','104 delta maps generated','16 API schemas generated','9 circulars · 9 tasks created'];
+
+function startProgress(){
+  let t=0;
+  STEPS.forEach((step,i)=>{
+    t+=step.delay;
+    setTimeout(()=>{
+      if(i>0){
+        const prev=document.getElementById('pi-'+(i-1));
+        prev.querySelector('.pi-icon').className='pi-icon done';
+        prev.querySelector('.pi-icon').textContent='✓';
+        const ps=prev.querySelector('[id^=ps-]');
+        if(ps){ps.className='pi-status done';ps.textContent=DONE_TEXT[i-1]||'Done';}
+      }
+      const cur=document.getElementById('pi-'+i);
+      cur.querySelector('.pi-icon').className='pi-icon running';
+      const ps=cur.querySelector('[id^=ps-]');
+      if(ps){ps.className='pi-status running';ps.innerHTML='<span class="spinner"></span>';}
+      if(i===6){document.getElementById('state-bar-wrap').style.display='block';animStateBar();}
+      document.getElementById('main-bar').style.width=step.pct+'%';
+      document.getElementById('pct').textContent=step.pct+'%';
+      if(i===STEPS.length-1){
+        setTimeout(()=>{
+          cur.querySelector('.pi-icon').className='pi-icon done';
+          cur.querySelector('.pi-icon').textContent='✓';
+          if(ps){ps.className='pi-status done';ps.textContent=DONE_TEXT[i]||'Done';}
+          document.getElementById('progress-done').style.display='block';
+        },800);
+      }
+    },t);
+  });
+}
+
+function animStateBar(){
+  let w=0;
+  const bar=document.getElementById('state-bar');
+  const iv=setInterval(()=>{w+=2;bar.style.width=w+'%';if(w>=100)clearInterval(iv);},40);
+}
+</script>
+</body>
+</html>
